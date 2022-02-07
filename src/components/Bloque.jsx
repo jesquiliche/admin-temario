@@ -10,7 +10,7 @@ import { faEnvelope as email,faUserEdit,faTrashAlt as remove,
 const Bloque = () => {
 
     const estadoInicial=useState({
-    
+        _id:"",
         numero:0,
         descripcion:""
     })
@@ -22,6 +22,11 @@ const Bloque = () => {
     useEffect(() => {
         obtenerBloques()
     }, []);
+
+    useEffect(() => {
+        obtenerBloques()
+    }, [bloque]);
+  
   
     //Obtener toda la lista de bloques  
     const obtenerBloques=async ()=>{
@@ -78,12 +83,15 @@ const Bloque = () => {
         )
     }
 
-    const handleOnSubmit=async (e)=>{
+    
+    const insertarBloque=async()=>{
+    
         const token=sessionStorage.getItem("token");
         try{
+
             const datos=await fetch('http://localhost:3001/api/bloque/',
             {
-            method:"POST",
+            method: "POST",
             body: JSON.stringify(bloque), // data can be `string` or {object}!
             headers:{
                 "auth-token": token.replace(/['"]+/g, ''),
@@ -92,13 +100,65 @@ const Bloque = () => {
                 }
             })
             .then(response => response.json())
+        }catch(error){
+            alert(error);
+        }
+    }
+
+    const updateBloque=async(id)=>{
         
+        const token=sessionStorage.getItem("token");
+        try{
+            
+            const dato = {
+                numero: bloque.numero,
+                descripcion:bloque.descripcion
+            }
+            const datos=await fetch('http://localhost:3001/api/bloque/'+id,
+        
+            {
+            method: "PUT",
+            body: JSON.stringify(dato), // data can be `string` or {object}!
+            headers:{
+                "auth-token": token.replace(/['"]+/g, ''),
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+                }
+            })
+            .then(response => response.json())
+        }catch(error){
+            alert(error);
+        }
+    }
     
+    const handleOnSubmit=async (e)=>{
+        e.preventDefault();
+        const {_id}=bloque;
+        if(!_id) insertarBloque();
+        else updateBloque(_id);
+        setBloque(estadoInicial);
+        obtenerBloques();
+    }
+
+    const actualizarBloque= async (id)=>{
+        const token=sessionStorage.getItem("token");
+    
+        try{
+            const datos=await fetch('http://localhost:3001/api/bloque/'+id,
+            {
+            method:"GET",
+            headers: {
+                "auth-token": token.replace(/['"]+/g, ''),
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+            }
+            }
+            ).then(response => response.json())
+            setBloque(datos);
         }
         catch (error){
-            console.log(error);
+            alert(error)
         }
-       // obtenerBloques();
     }
 
     return (
@@ -114,17 +174,21 @@ const Bloque = () => {
                     <div className="card-body">
                         <form onSubmit={handleOnSubmit}>
                             <input type="number"
+                                required
                                 placeholder="numero"
                                 name="numero"  
                                 className="form-control my-1"
                                 onChange={handleOnChange}
                                 autoFocus="autofocus"
+                                value={bloque.numero || ''}
                                 />
                             <textarea rows="5"
+                                required
                                 placeholder="Descripción"
                                 name="descripcion"  
                                 className="form-control my-1"
                                 onChange={handleOnChange}
+                                value={bloque.descripcion || ''}
                                 >
                             </textarea>
                            <button type="submit" className="btn btn-primary w-100">
@@ -155,7 +219,8 @@ const Bloque = () => {
                                     <td>{e.numero}</td>
                                     <td>{e.descripcion}</td>
                                     <td>
-                                        <a className="btn btn-danger">
+                                        <a className="btn btn-danger"
+                                        onClick={()=>actualizarBloque(e._id)}>
                                         <FontAwesomeIcon icon={faUserEdit} className="ml-0 text-white mx-auto" />
                                         </a>
                                         |
